@@ -39,5 +39,5 @@ jobs:
             server: files.adriver.ru/z.daulenov
             username: ${{ secrets.FTP_USERNAME }} 
             password: ${{ secrets.FTP_PASSWORD }}
-            local-dir: public/*
+            local-dir: public/
             server-dir: public/
