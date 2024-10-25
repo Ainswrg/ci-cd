@@ -36,7 +36,7 @@ jobs:
         - name: FTP Deploy
           uses: SamKirkland/FTP-Deploy-Action@4.0.0
           with:
-            server: files.adriver.ru/z.daulenov
+            server: files.adriver.ru
             username: ${{ secrets.FTP_USERNAME }} 
             password: ${{ secrets.FTP_PASSWORD }}
             local-dir: public/
