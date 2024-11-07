@@ -35,31 +35,33 @@ jobs:
       - uses: actions/checkout@v3
       - name: Upload files to Nextcloud and Create Public Links
         env:
-          NEXTCLOUD_URL: ${{ secrets.NEXTCLOUD_URL }}
+          NEXTCLOUD_WEBDAV_URL: ${{ secrets.NEXTCLOUD_WEBDAV_URL }}
           NEXTCLOUD_USERNAME: ${{ secrets.NEXTCLOUD_USERNAME }}
           NEXTCLOUD_PASSWORD: ${{ secrets.NEXTCLOUD_PASSWORD }}
         run: |
-          # Убедитесь, что директория назначения существует
-          curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -X MKCOL "$NEXTCLOUD_URL/public/" || echo "Directory already exists"
-          
-          # Загрузите файлы в Nextcloud и создайте публичные ссылки
+          # Загрузите файлы на Nextcloud через WebDAV
           for file in $(find public/ -type f); do
             filename=${file#public/}
-            # Загрузите файл на Nextcloud
-            curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -T "$file" "$NEXTCLOUD_URL/public/$filename"
-            
-            # Создайте общую ссылку на файл
+            curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -T "$file" "$NEXTCLOUD_WEBDAV_URL$filename"
+          done
+
+      - name: Create Public Links for Uploaded Files
+        env:
+          NEXTCLOUD_URL: "https://disk.adriver.ru"
+          NEXTCLOUD_USERNAME: ${{ secrets.NEXTCLOUD_USERNAME }}
+          NEXTCLOUD_PASSWORD: ${{ secrets.NEXTCLOUD_PASSWORD }}
+        run: |
+          for file in $(find public/ -type f); do
+            filename=${file#public/}
             response=$(curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -X POST \
-              -d "path=/public/$filename" \
+              -d "path=/files/a0365f84-3e5b-42f0-a545-f9965a54d615/$filename" \
               -d "shareType=3" \
               -d "permissions=1" \
               "$NEXTCLOUD_URL/ocs/v2.php/apps/files_sharing/api/v1/shares" \
               -H "OCS-APIRequest: true" \
               -H "Content-Type: application/x-www-form-urlencoded")
-            
-            # Извлеките публичную ссылку из ответа
+
+            # Извлечение публичной ссылки из ответа
             public_link=$(echo "$response" | grep -oP '(?<=<url>)[^<]+')
-            
-            # Выведите ссылку в лог для проверки
             echo "Публичная ссылка на $filename: $public_link"
           done
