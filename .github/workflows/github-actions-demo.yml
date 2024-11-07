@@ -67,11 +67,11 @@ jobs:
           # Отправляем запрос для создания публичной ссылки
           response=$(curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -X POST \
             -d "path=/files/public/$filename" \
-            -d "shareType=3" \  # shareType=3 для публичной ссылки
-            -d "permissions=1" \ # permissions=1 для чтения
-            -d "expireDate=2024-12-01" \  # Опционально, срок действия ссылки
-            -d "note=Public file" \  # Опционально, комментарий
-            -d "sendMail=false" \  # Опционально, не отправлять почту
+            -d "shareType=3" \
+            -d "permissions=1" \
+            -d "expireDate=2024-12-01" \
+            -d "note=Public file" \
+            -d "sendMail=false" \
             "$NEXTCLOUD_URL/ocs/v2.php/apps/files_sharing/api/v1/shares" \
             -H "OCS-APIRequest: true" \
             -H "Content-Type: application/x-www-form-urlencoded")
