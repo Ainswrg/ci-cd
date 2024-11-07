@@ -32,40 +32,41 @@ jobs:
     runs-on: ubuntu-latest
     needs: init
     steps:
-      - uses: actions/checkout@v3
-      - name: Upload files to Nextcloud and Create Public Links
-        env:
-          NEXTCLOUD_WEBDAV_URL: ${{ secrets.NEXTCLOUD_WEBDAV_URL }}
-          NEXTCLOUD_USERNAME: ${{ secrets.NEXTCLOUD_USERNAME }}
-          NEXTCLOUD_PASSWORD: ${{ secrets.NEXTCLOUD_PASSWORD }}
-        run: |
-          # Загрузите файлы на Nextcloud через WebDAV
-          for file in $(find public/ -type f); do
-            filename=${file#public/}
-            curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -T "$file" "$NEXTCLOUD_WEBDAV_URL$filename"
-          done
-
-      - name: Create Public Links for Uploaded Files
-        env:
-          NEXTCLOUD_URL: "https://disk.adriver.ru"
-          NEXTCLOUD_USERNAME: ${{ secrets.NEXTCLOUD_USERNAME }}
-          NEXTCLOUD_PASSWORD: ${{ secrets.NEXTCLOUD_PASSWORD }}
-        run: |
-          for file in $(find public/ -type f); do
-            filename=${file#public/}
-            response=$(curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -X POST \
-              -d "path=/files/a0365f84-3e5b-42f0-a545-f9965a54d615/$filename" \
-              -d "shareType=3" \
-              -d "permissions=1" \
-              "$NEXTCLOUD_URL/ocs/v2.php/apps/files_sharing/api/v1/shares" \
-              -H "OCS-APIRequest: true" \
-              -H "Content-Type: application/x-www-form-urlencoded")
-    
-            # Извлечение публичной ссылки из ответа
-            public_link=$(echo "$response" | jq -r '.ocs.data.url')
-            if [ "$public_link" != "null" ]; then
-              echo "Публичная ссылка на $filename: $public_link"
-            else
-              echo "Не удалось создать публичную ссылку для $filename"
-            fi
-          done
+    - uses: actions/checkout@v3
+    - name: Upload files to Nextcloud and Create Public Links
+      env:
+        NEXTCLOUD_WEBDAV_URL: ${{ secrets.NEXTCLOUD_WEBDAV_URL }}
+        NEXTCLOUD_USERNAME: ${{ secrets.NEXTCLOUD_USERNAME }}
+        NEXTCLOUD_PASSWORD: ${{ secrets.NEXTCLOUD_PASSWORD }}
+      run: |
+        # Загрузите файлы на Nextcloud в папку public через WebDAV
+        for file in $(find public/ -type f); do
+          filename=${file#public/}
+          # Убедитесь, что файл загружается в папку public на сервере
+          curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -T "$file" "$NEXTCLOUD_WEBDAV_URL/public/$filename"
+        done
+  
+    - name: Create Public Links for Uploaded Files
+      env:
+        NEXTCLOUD_URL: "https://disk.adriver.ru"
+        NEXTCLOUD_USERNAME: ${{ secrets.NEXTCLOUD_USERNAME }}
+        NEXTCLOUD_PASSWORD: ${{ secrets.NEXTCLOUD_PASSWORD }}
+      run: |
+        for file in $(find public/ -type f); do
+          filename=${file#public/}
+          response=$(curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -X POST \
+            -d "path=/files/public/$filename" \  # Добавлен путь к папке public
+            -d "shareType=3" \
+            -d "permissions=1" \
+            "$NEXTCLOUD_URL/ocs/v2.php/apps/files_sharing/api/v1/shares" \
+            -H "OCS-APIRequest: true" \
+            -H "Content-Type: application/x-www-form-urlencoded")
+  
+          # Извлечение публичной ссылки из ответа
+          public_link=$(echo "$response" | jq -r '.ocs.data.url')
+          if [ "$public_link" != "null" ]; then
+            echo "Публичная ссылка на $filename: $public_link"
+          else
+            echo "Не удалось создать публичную ссылку для $filename"
+          fi
+        done
