@@ -60,8 +60,12 @@ jobs:
               "$NEXTCLOUD_URL/ocs/v2.php/apps/files_sharing/api/v1/shares" \
               -H "OCS-APIRequest: true" \
               -H "Content-Type: application/x-www-form-urlencoded")
-
+    
             # Извлечение публичной ссылки из ответа
-            public_link=$(echo "$response" | grep -oP '(?<=<url>)[^<]+')
-            echo "Публичная ссылка на $filename: $public_link"
+            public_link=$(echo "$response" | jq -r '.ocs.data.url')
+            if [ "$public_link" != "null" ]; then
+              echo "Публичная ссылка на $filename: $public_link"
+            else
+              echo "Не удалось создать публичную ссылку для $filename"
+            fi
           done
