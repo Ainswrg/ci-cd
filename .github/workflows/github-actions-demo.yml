@@ -55,7 +55,7 @@ jobs:
         # Проверяем, что все переменные окружения установлены корректно
         echo "NEXTCLOUD_URL: $NEXTCLOUD_URL"
         echo "NEXTCLOUD_USERNAME: $NEXTCLOUD_USERNAME"
-  
+      
         # Создаем публичные ссылки
         for file in $(find public/ -type f); do
           filename=${file#public/}
@@ -63,22 +63,25 @@ jobs:
           
           # Выводим путь, чтобы отладить
           echo "Файл на сервере: /files/public/$filename"
-  
+      
           # Отправляем запрос для создания публичной ссылки
           response=$(curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -X POST \
             -d "path=/files/public/$filename" \
-            -d "shareType=3" \
-            -d "permissions=1" \
+            -d "shareType=3" \  # shareType=3 для публичной ссылки
+            -d "permissions=1" \ # permissions=1 для чтения
+            -d "expireDate=2024-12-01" \  # Опционально, срок действия ссылки
+            -d "note=Public file" \  # Опционально, комментарий
+            -d "sendMail=false" \  # Опционально, не отправлять почту
             "$NEXTCLOUD_URL/ocs/v2.php/apps/files_sharing/api/v1/shares" \
             -H "OCS-APIRequest: true" \
             -H "Content-Type: application/x-www-form-urlencoded")
-  
+      
           # Выводим весь ответ для отладки
           echo "Ответ от сервера: $response"
-  
+      
           # Проверяем, является ли ответ JSON и извлекаем публичную ссылку
           public_link=$(echo "$response" | jq -r '.ocs.data.url')
-  
+      
           # Если ссылка существует, выводим ее
           if [ "$public_link" != "null" ]; then
             echo "Публичная ссылка на $filename: $public_link"
