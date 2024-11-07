@@ -60,6 +60,9 @@ jobs:
         for file in $(find public/ -type f); do
           filename=${file#public/}
           echo "Создаю публичную ссылку для файла: $filename"
+          
+          # Выводим путь, чтобы отладить
+          echo "Файл на сервере: /files/public/$filename"
   
           # Отправляем запрос для создания публичной ссылки
           response=$(curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -X POST \
