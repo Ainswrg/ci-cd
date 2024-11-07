@@ -29,15 +29,37 @@ jobs:
       - name: lint code
         run: npm run lint
   deploy:
-      runs-on: ubuntu-latest
-      needs: init
-      steps:
-        - uses: actions/checkout@v3
-        - name: FTP Deploy
-          uses: SamKirkland/FTP-Deploy-Action@4.0.0
-          with:
-            server: files.adriver.ru
-            username: ${{ secrets.FTP_USERNAME }} 
-            password: ${{ secrets.FTP_PASSWORD }}
-            local-dir: public/
-            server-dir: public/
+    runs-on: ubuntu-latest
+    needs: init
+    steps:
+      - uses: actions/checkout@v3
+      - name: Upload files to Nextcloud and Create Public Links
+        env:
+          NEXTCLOUD_URL: ${{ secrets.NEXTCLOUD_URL }}
+          NEXTCLOUD_USERNAME: ${{ secrets.NEXTCLOUD_USERNAME }}
+          NEXTCLOUD_PASSWORD: ${{ secrets.NEXTCLOUD_PASSWORD }}
+        run: |
+          # Убедитесь, что директория назначения существует
+          curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -X MKCOL "$NEXTCLOUD_URL/public/" || echo "Directory already exists"
+          
+          # Загрузите файлы в Nextcloud и создайте публичные ссылки
+          for file in $(find public/ -type f); do
+            filename=${file#public/}
+            # Загрузите файл на Nextcloud
+            curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -T "$file" "$NEXTCLOUD_URL/public/$filename"
+            
+            # Создайте общую ссылку на файл
+            response=$(curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -X POST \
+              -d "path=/public/$filename" \
+              -d "shareType=3" \
+              -d "permissions=1" \
+              "$NEXTCLOUD_URL/ocs/v2.php/apps/files_sharing/api/v1/shares" \
+              -H "OCS-APIRequest: true" \
+              -H "Content-Type: application/x-www-form-urlencoded")
+            
+            # Извлеките публичную ссылку из ответа
+            public_link=$(echo "$response" | grep -oP '(?<=<url>)[^<]+')
+            
+            # Выведите ссылку в лог для проверки
+            echo "Публичная ссылка на $filename: $public_link"
+          done
