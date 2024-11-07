@@ -48,7 +48,7 @@ jobs:
   
     - name: Create Public Links for Uploaded Files
       env:
-        NEXTCLOUD_URL: ${{ secrets.NEXTCLOUD_WEBDAV_URL }}
+        NEXTCLOUD_URL: ${{ secrets.NEXTCLOUD_URL }}
         NEXTCLOUD_USERNAME: ${{ secrets.NEXTCLOUD_USERNAME }}
         NEXTCLOUD_PASSWORD: ${{ secrets.NEXTCLOUD_PASSWORD }}
       run: |
