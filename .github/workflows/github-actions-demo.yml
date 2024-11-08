@@ -39,53 +39,8 @@ jobs:
         NEXTCLOUD_USERNAME: ${{ secrets.NEXTCLOUD_USERNAME }}
         NEXTCLOUD_PASSWORD: ${{ secrets.NEXTCLOUD_PASSWORD }}
       run: |
-        # Загрузите файлы на Nextcloud в папку public через WebDAV
         for file in $(find public/ -type f); do
           filename=${file#public/}
-          # Убедитесь, что файл загружается в папку public на сервере
           curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -T "$file" "$NEXTCLOUD_WEBDAV_URL/public/$filename"
         done
   
-    # - name: Create Public Links for Uploaded Files
-    #   env:
-    #     NEXTCLOUD_URL: ${{ secrets.NEXTCLOUD_URL }}
-    #     NEXTCLOUD_USERNAME: ${{ secrets.NEXTCLOUD_USERNAME }}
-    #     NEXTCLOUD_PASSWORD: ${{ secrets.NEXTCLOUD_PASSWORD }}
-    #   run: |
-    #     # Проверяем, что все переменные окружения установлены корректно
-    #     echo "NEXTCLOUD_URL: $NEXTCLOUD_URL"
-    #     echo "NEXTCLOUD_USERNAME: $NEXTCLOUD_USERNAME"
-      
-    #     # Создаем публичные ссылки
-    #     for file in $(find public/ -type f); do
-    #       filename=${file#public/}
-    #       echo "Создаю публичную ссылку для файла: $filename"
-          
-    #       # Выводим путь, чтобы отладить
-    #       echo "Файл на сервере: /files/public/$filename"
-      
-    #       # Отправляем запрос для создания публичной ссылки
-    #       response=$(curl -u $NEXTCLOUD_USERNAME:$NEXTCLOUD_PASSWORD -X POST \
-    #         -d "path=/files/public/$filename" \
-    #         -d "shareType=3" \
-    #         -d "permissions=1" \
-    #         -d "expireDate=2024-12-01" \
-    #         -d "note=Public file" \
-    #         -d "sendMail=false" \
-    #         "$NEXTCLOUD_URL/ocs/v2.php/apps/files_sharing/api/v1/shares" \
-    #         -H "OCS-APIRequest: true" \
-    #         -H "Content-Type: application/x-www-form-urlencoded")
-      
-    #       # Выводим весь ответ для отладки
-    #       echo "Ответ от сервера: $response"
-      
-    #       # Проверяем, является ли ответ JSON и извлекаем публичную ссылку
-    #       public_link=$(echo "$response" | jq -r '.ocs.data.url')
-      
-    #       # Если ссылка существует, выводим ее
-    #       if [ "$public_link" != "null" ]; then
-    #         echo "Публичная ссылка на $filename: $public_link"
-    #       else
-    #         echo "Не удалось создать публичную ссылку для $filename. Ответ: $response"
-    #       fi
-    #     done
